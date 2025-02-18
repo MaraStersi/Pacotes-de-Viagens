@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pacote.nome %></title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <header>
+        <h1><%= pacote.nome %></h1>
+        <a href="/logout">Logout</a>
+    </header>
+    
+    <div class="detalhes">
+        <p><strong>Destino:</strong> <%= pacote.destino %></p>
+        <p><strong>Data de Partida:</strong> <%= pacote.dataPartida %></p>
+        <p><strong>Preço:</strong> R$ <%= pacote.preco %></p>
+        <p><strong>Descrição:</strong> <%= pacote.descricao %></p>
+        <p><strong>Duração:</strong> <%= pacote.duracao %></p>
+        <p><strong>Lugares Disponíveis:</strong> <%= pacote.lugaresDisponiveis %></p>
+
+        <label for="quantidade">Quantidade de Lugares:</label>
+        <input type="number" id="quantidade" min="1" max="<%= pacote.lugaresDisponiveis %>" value="1" oninput="calcularTotal()">
+        <p>Total: R$ <span id="total">5000</span></p>
+    </div>
+</body>
+</html>
