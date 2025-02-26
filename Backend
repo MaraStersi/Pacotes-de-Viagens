@@ -1,0 +1,87 @@
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const session = require('express-session');
+const { Sequelize, DataTypes } = require('sequelize');
+
+
+const sequelize = new Sequelize('viagens_db', 'root', 'senha', {
+    host: 'localhost',
+    dialect: 'mysql'
+});
+
+
+const PacoteViagem = sequelize.define('PacoteViagem', {
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    nome: { type: DataTypes.STRING, allowNull: false },
+    destino: { type: DataTypes.STRING, allowNull: false },
+    preco: { type: DataTypes.FLOAT, allowNull: false },
+    dataPartida: { type: DataTypes.DATE, allowNull: false },
+    descricao: { type: DataTypes.TEXT },
+    duracao: { type: DataTypes.STRING },
+    lugaresDisponiveis: { type: DataTypes.INTEGER, allowNull: false }
+}, {
+    tableName: 'pacotes_viagem',
+    timestamps: false
+});
+
+
+sequelize.sync()
+    .then(() => console.log("Banco de dados sincronizado"))
+    .catch(err => console.error("Erro ao sincronizar banco de dados:", err));
+
+const app = express();
+const port = 3001;
+
+
+app.use(bodyParser.json());
+app.use(session({
+    secret: 'viagemsecret',
+    resave: false,
+    saveUninitialized: true
+}));
+
+
+app.post('/pacotes', async (req, res) => {
+    try {
+        const pacote = await PacoteViagem.create(req.body);
+        res.status(201).json(pacote);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+app.get('/pacotes', async (req, res) => {
+    const pacotes = await PacoteViagem.findAll();
+    res.json(pacotes);
+});
+
+app.get('/pacotes/:id', async (req, res) => {
+    const pacote = await PacoteViagem.findByPk(req.params.id);
+    pacote ? res.json(pacote) : res.status(404).json({ error: "Pacote não encontrado" });
+});
+
+app.put('/pacotes/:id', async (req, res) => {
+    const pacote = await PacoteViagem.findByPk(req.params.id);
+    if (pacote) {
+        await pacote.update(req.body);
+        res.json(pacote);
+    } else {
+        res.status(404).json({ error: "Pacote não encontrado" });
+    }
+});
+
+app.delete('/pacotes/:id', async (req, res) => {
+    const pacote = await PacoteViagem.findByPk(req.params.id);
+    if (pacote) {
+        await pacote.destroy();
+        res.json({ message: "Pacote excluído com sucesso" });
+    } else {
+        res.status(404).json({ error: "Pacote não encontrado" });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`Servidor rodando em http://localhost:${port}`);
+});
+
