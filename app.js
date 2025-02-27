@@ -16,7 +16,7 @@ app.use(session({
     resave: false,
     saveUninitialized: true
 }));
-
+// Sessão para autenticação
 
 const pacotes = [
     { id: 1, nome: 'Viagem para Paris', destino: 'Paris', preco: 5000, dataPartida: '2025-06-15', descricao: 'Pacote incrível para conhecer Paris.', duracao: '7 dias', lugaresDisponiveis: 5 },
