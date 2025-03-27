@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Pacotes de Viagem</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        form {
+            display: grid;
+            gap: 10px;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        button {
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        td button {
+            padding: 8px;
+            font-size: 14px;
+            margin: 5px;
+            width: 90px;
+        }
+
+        .notification {
+            padding: 15px;
+            text-align: center;
+            margin: 10px 0;
+            display: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .success {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .error {
+            background-color: #f44336;
+            color: white;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <h1>Painel de Pacotes de Viagem</h1>
+    <a href="/">Voltar</a>
+    <div class="container">
+        <h2>Cadastrar Pacote</h2>        
+        <form id="formCadastrarPacote">
+            <input type="text" id="nome" placeholder="Nome do Pacote">
+            <input type="text" id="destino" placeholder="Destino">
+            <input type="number" id="preco" placeholder="Preço" min="1">
+            <input type="datetime-local" id="dataPartida">
+            <textarea id="descricao" placeholder="Descrição" rows="3"></textarea>
+            <input type="text" id="duracao" placeholder="Duração">
+            <input type="number" id="lugaresDisponiveis" placeholder="Lugares Disponíveis" min="1">
+            <button type="submit">Cadastrar Pacote</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Pacotes Cadastrados</h2>
+        <table id="tabelaPacotes">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Destino</th>
+                    <th>Preço</th>
+                    <th>Data de Partida</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% pacotes.forEach(function(pacote) { %>
+                    <tr id="pacote-<%= pacote.id %>">
+                        <td><%= pacote.nome %></td>
+                        <td><%= pacote.destino %></td>
+                        <td>R$ <%= pacote.preco.toFixed(2) %></td>
+                        <td><%= pacote.dataPartida %></td>
+                        <td>
+                            <button onclick="editarPacote('<%= pacote.id %>')">Editar</button>
+                            <button onclick="excluirPacote('<%= pacote.id %>')">Excluir</button>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        const apiUrl = 'http://localhost:3001/pacotes';
+
+        // exibi notificações
+        function mostrarNotificacao(mensagem, erro = false) {
+            const notification = document.getElementById('notification');
+            notification.textContent = mensagem;
+            notification.style.backgroundColor = erro ? '#f44336' : '#4caf50'; // Red para erro, Green para sucesso
+            notification.style.display = 'block';
+            setTimeout(() => notification.style.display = 'none', 3000);
+        }
+
+        // cadastra pacote
+        document.getElementById('formCadastrarPacote').addEventListener('submit', async (event) => {
+            event.preventDefault(); 
+
+            let isValid = true;
+            let messages = [];
+           
+            const nome = document.getElementById('nome').value.trim();
+            const destino = document.getElementById('destino').value.trim();
+            const preco = parseFloat(document.getElementById('preco').value);
+            const dataPartida = new Date(document.getElementById('dataPartida').value);
+            const descricao = document.getElementById('descricao').value.trim();
+            const duracao = document.getElementById('duracao').value.trim();
+            const lugaresDisponiveis = parseInt(document.getElementById('lugaresDisponiveis').value);
+
+            // validações
+            if (!nome) {
+                isValid = false;
+                messages.push('O campo "Nome do Pacote" é obrigatório.');
+            }
+
+            if (!destino) {
+                isValid = false;
+                messages.push('O campo "Destino" é obrigatório.');
+            }
+
+            if (isNaN(preco) || preco <= 0) {
+                isValid = false;
+                messages.push('O campo "Preço" deve ser um número positivo.');
+            }
+
+            const hoje = new Date();
+            if (isNaN(dataPartida.getTime()) || dataPartida <= hoje) {
+                isValid = false;
+                messages.push('A "Data de Partida" deve ser uma data futura.');
+            }
+
+            if (!descricao) {
+                isValid = false;
+                messages.push('O campo "Descrição" é obrigatório.');
+            }
+
+            if (!duracao) {
+                isValid = false;
+                messages.push('O campo "Duração" é obrigatório.');
+            }
+
+            if (isNaN(lugaresDisponiveis) || lugaresDisponiveis <= 0) {
+                isValid = false;
+                messages.push('O campo "Lugares Disponíveis" deve ser um número inteiro positivo.');
+            }
+
+            
+            if (!isValid) {
+                alert(messages.join('\n'));
+                return;
+            }
+
+            
+            const pacote = {
+                nome,
+                destino,
+                preco,
+                dataPartida: document.getElementById('dataPartida').value, 
+                descricao,
+                duracao,
+                lugaresDisponiveis
+            };
+
+            try {
+                await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(pacote)
+                });
+
+                mostrarNotificacao('Pacote cadastrado com sucesso!');
+                obterPacotes(); // Atualiza a tabela sem recarregar a página
+
+                // Limpa os campos do formulário apOs o cadastro
+                document.getElementById('formCadastrarPacote').reset();
+
+            } catch (error) {
+                mostrarNotificacao('Erro ao cadastrar pacote.', true);
+            }
+        });
+
+
+        // edita pacote
+        async function editarPacote(id) {
+            try {
+                const pacote = await fetch(`${apiUrl}/${id}`).then(res => res.json());
+                if (!pacote) {
+                    mostrarNotificacao('Pacote não encontrado.', true);
+                    return;
+                }
+                const novoNome = prompt('Digite o novo nome do pacote', pacote.nome);
+                const novoDestino = prompt('Digite o novo destino', pacote.destino);
+                const novoPreco = prompt('Digite o novo preço', pacote.preco);
+                const novaDescricao = prompt('Digite a nova descrição', pacote.descricao);
+                const novaDuracao = prompt('Digite a nova duração', pacote.duracao);
+                const novosLugares = prompt('Digite os novos lugares disponíveis', pacote.lugaresDisponiveis);
+
+                if (novoNome) {
+                    await fetch(`${apiUrl}/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            nome: novoNome,
+                            destino: novoDestino,
+                            preco: novoPreco,
+                            descricao: novaDescricao,
+                            duracao: novaDuracao,
+                            lugaresDisponiveis: novosLugares
+                        })
+                    });
+                    mostrarNotificacao('Pacote atualizado com sucesso!');
+                    obterPacotes(); // atualiza a tabela sem recarregar a página
+                }
+            } catch (error) {
+                mostrarNotificacao('Erro ao editar o pacote.', true);
+            }
+        }
+
+        // excluir pacote
+        async function excluirPacote(id) {
+            if (confirm('Tem certeza que deseja excluir este pacote?')) {
+                try {
+                    await fetch(`${apiUrl}/${id}`, {
+                        method: 'DELETE'
+                    });
+                    mostrarNotificacao('Pacote excluído com sucesso!');
+                    obterPacotes(); // atualiza a tabela sem recarregar a página
+                } catch (error) {
+                    mostrarNotificacao('Erro ao excluir o pacote.', true);
+                }
+            }
+        }
+
+        // pega os pacotes e atualiza a tabela
+        async function obterPacotes() {
+            try {
+                const resposta = await fetch(apiUrl);
+                const pacotes = await resposta.json();
+                atualizarTabela(pacotes);
+            } catch (error) {
+                mostrarNotificacao('Erro ao obter pacotes.', true);
+            }
+        }
+
+        //  atualiza a tabela de pacotes
+        function atualizarTabela(pacotes) {
+            const tabela = document.getElementById('tabelaPacotes').getElementsByTagName('tbody')[0];
+            tabela.innerHTML = ''; 
+            pacotes.forEach(pacote => {
+                const row = tabela.insertRow();
+                row.innerHTML = `
+                    <td>${pacote.nome}</td>
+                    <td>${pacote.destino}</td>
+                    <td>${pacote.preco}</td>
+                    <td>${pacote.dataPartida}</td>
+                    <td>
+                        <button onclick="editarPacote('${pacote.id}')">Editar</button>
+                        <button onclick="excluirPacote('${pacote.id}')">Excluir</button>
+                        <p><strong>Descrição:</strong> ${pacote.descricao.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+                    </td>
+                `;
+            });
+        }
+        
+        obterPacotes();
+    </script>
+
+</body>
+</html>

@@ -9,7 +9,12 @@
 <body>
     <header>
         <h1>Pacotes de Viagem</h1>
-        <a href="/login">Login</a>
+        <% if (!autenticado) { %>
+            <a href="/login">Login</a>
+        <% } else { %>
+            <a href="/painel-pacotes">Acessar Painel</a>
+            <a href="/logout">Logout</a> <!-- Link de logout -->
+        <% } %>
     </header>
     
     <div class="pacotes">
